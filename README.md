@@ -38,32 +38,12 @@ STEP-5: Combine all these groups to get the complete cipher text.
 #include <string.h>
 #include <ctype.h>
 
-int main()
+int key[2][2], inverse[2][2];
+
+void encryption(char PT[], char CT[])
 {
-    char PT[100];
-    int key[2][2], i, a, b;
-    int x, y;
-
-    printf("Enter the plaintext ");
-    scanf("%99s", PT);
-
-    for (i = 0; PT[i] != '\0'; i++)
-        PT[i] = toupper((unsigned char)PT[i]);
-
+    int i, a, b, x, y;
     int len = strlen(PT);
-
-    if (len % 2 != 0)
-    {
-        printf("Plaintext length must be even.\n");
-        return 1;
-    }
-
-    printf("Enter the 2x2 key matrix:\n");
-    for (i = 0; i < 2; i++)
-        for (int j = 0; j < 2; j++)
-            scanf("%d", &key[i][j]);
-
-    printf("Encrypted text: ");
 
     for (i = 0; i < len; i += 2)
     {
@@ -73,10 +53,98 @@ int main()
         x = (key[0][0] * a + key[0][1] * b) % 26;
         y = (key[1][0] * a + key[1][1] * b) % 26;
 
-        printf("%c%c", x + 'A', y + 'A');
+        CT[i] = x + 'A';
+        CT[i + 1] = y + 'A';
     }
 
-    printf("\n");
+    CT[len] = '\0';
+}
+
+void decryption(char CT[], char DT[])
+{
+    int i, a, b, x, y;
+    int len = strlen(CT);
+
+    for (i = 0; i < len; i += 2)
+    {
+        a = CT[i] - 'A';
+        b = CT[i + 1] - 'A';
+
+        x = (inverse[0][0] * a + inverse[0][1] * b) % 26;
+        y = (inverse[1][0] * a + inverse[1][1] * b) % 26;
+
+        DT[i] = x + 'A';
+        DT[i + 1] = y + 'A';
+    }
+
+    DT[len] = '\0';
+}
+
+int main()
+{
+    char PT[100], CT[100], DT[100];
+    int i, j, det, invDet = -1;
+
+    printf("Enter the plaintext: ");
+    scanf("%99s", PT);
+
+    for (i = 0; PT[i] != '\0'; i++)
+        PT[i] = toupper((unsigned char)PT[i]);
+
+    if (strlen(PT) % 2 != 0)
+    {
+        printf("Plaintext length must be even.\n");
+        return 1;
+    }
+
+    printf("Enter the 2x2 key matrix:\n");
+
+    for (i = 0; i < 2; i++)
+        for (j = 0; j < 2; j++)
+            scanf("%d", &key[i][j]);
+
+    det = (key[0][0] * key[1][1] -
+           key[0][1] * key[1][0]) % 26;
+
+    if (det < 0)
+        det += 26;
+
+    for (i = 1; i < 26; i++)
+    {
+        if ((det * i) % 26 == 1)
+        {
+            invDet = i;
+            break;
+        }
+    }
+
+    if (invDet == -1)
+    {
+        printf("Invalid key matrix. Decryption is not possible.\n");
+        return 1;
+    }
+
+    inverse[0][0] = key[1][1];
+    inverse[0][1] = -key[0][1];
+    inverse[1][0] = -key[1][0];
+    inverse[1][1] = key[0][0];
+
+    for (i = 0; i < 2; i++)
+    {
+        for (j = 0; j < 2; j++)
+        {
+            inverse[i][j] = (inverse[i][j] * invDet) % 26;
+
+            if (inverse[i][j] < 0)
+                inverse[i][j] += 26;
+        }
+    }
+
+    encryption(PT, CT);
+    printf("Encrypted text: %s\n", CT);
+
+    decryption(CT, DT);
+    printf("Decrypted text: %s\n", DT);
 
     return 0;
 }
